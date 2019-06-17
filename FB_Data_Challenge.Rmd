@@ -1,0 +1,104 @@
+---
+title: "Facebook_Challenge"
+output: html_document
+---
+```{r setup, include=FALSE}
+#import libraries
+library(ggplot2)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+df <- read.csv("sf_business_cleaned.csv")
+```
+
+```{r}
+#convert date strings to date variables
+df$zipcode <- as.factor(df$zipcode)
+df$location_start_edit <- as.Date(df$location_start, format="%Y-%m-%d")
+df$location_end_edit <- as.Date(df$location_end, format="%Y-%m-%d")
+df$business_start_edit <- as.Date(df$business_start, format="%Y-%m-%d")
+df$business_end_edit <- as.Date(df$business_end, format="%Y-%m-%d")
+df$bstart_year <- format(df$business_start_edit, "%Y")
+df$bstart_year <- as.integer(df$bstart_year)
+df$bend_year <- as.integer(format(df$business_end_edit, "%Y"))
+# table of each year's ratio of opens to closes
+```
+
+
+```{r}
+#beginning visualizations
+df_editor <- df[is.na(df$naics_code) == FALSE, ]
+business_type_hist <- ggplot2::ggplot(data = df_editor, ggplot2::aes(x=df_editor$bstart_year, fill=df_editor$naics_code), na.rm=TRUE) + ggplot2::geom_bar() + ggplot2::xlim(1965, 2017)
+```
+
+```{r}
+# visual representation of NAICS codes
+num_business <- table(df$naics_code)
+```
+
+
+
+```{r}
+#define current era as being between years 2000 and 2018
+current_era <- df[df$bstart_year > 2000 & df$bstart_year < 2018 & is.na(df$naics_code) == FALSE, ]
+business_starts_hist2 <- ggplot2::ggplot(data = current_era, ggplot2::aes(x=current_era$bstart_year, fill=current_era$naics_code), na.rm=TRUE) + ggplot2::geom_bar() + ggplot2::xlim(2000, 2018)
+
+#businesses in current era that have failed
+business_ends_hist <- ggplot2::ggplot(data = current_era, ggplot2::aes(x=current_era$bend_year, fill=current_era$naics_code), na.rm=TRUE) + ggplot2::geom_bar() + ggplot2::xlim(2000, 2018)
+```
+
+
+```{r}
+#which industries have failed the least?
+#Where have the industries failed the least?
+business_type_hist2
+business_ends_hist
+```
+
+
+```{r}
+#what businesses that have opened in the past 15 years have failed
+bstarts <- table(current_era$naics_code)
+bends <- table(current_era$naics_code[is.na(current_era$business_end) == TRUE])
+#bstarts
+#bends
+bdiff <- (bends / bstarts)
+bdiff
+```
+
+
+```{r}
+# create table of NAICS codes to determine the frequency of each industry
+bidness <- table(df$naics_code)
+bidness_ends <- table(df$naics_code[is.na(df$business_end) == TRUE])
+bidness_diff <- bidness_ends / bidness
+#bidness_diff
+barplot(bidness_diff, xlab="Industry", ylab="Failure Rate", col="blue", main="Business Failure Rate in Current Era")
+#ggplot2::ggplot(bidness_diff, ggplot2::aes(bidness_diff, stat="identity")) + ggplot2::geom_bar()
+```
+
+
+```{r}
+# number of unique owners within dataset
+num_unique_owners <- length(unique(current_era$owner_number))
+```
+transportation and warehousing landscape
+```{r}
+# create dataframe only considering transportation and warehousing companies
+t_and_w <- current_era[current_era$naics_code == "Transportation and Warehousing", ]
+#number of total businesses created between 2000 and 2018
+nrow(t_and_w)
+length(unique(t_and_w$owner_number))
+dup_owners <- t_and_w[t_and_w$business_number > 1, ]
+nrow(dup_owners)
+table(dup_owners$owner_number)
+```
+
+
+```{r}
+#which T & W companies have not closed in a particular location?
+successful_t_and_w <- current_era[current_era$naics_code  == "Transportation and Warehousing" & is.na(current_era$location_end) == FALSE, ]
+```
+
+
